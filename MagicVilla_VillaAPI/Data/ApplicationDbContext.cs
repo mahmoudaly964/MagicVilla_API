@@ -12,6 +12,10 @@ namespace MagicVilla_VillaAPI.Data
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<User>()
+                        .HasIndex(u => u.UserName)
+                        .IsUnique();
+
             modelBuilder.Entity<Villa>().HasData(
               new Villa
                 {
@@ -76,6 +80,7 @@ namespace MagicVilla_VillaAPI.Data
         }
         public DbSet<Villa> Villas { get; set; }
         public DbSet<VillaNumber> VillaNumbers { get; set; }
+        public DbSet<User>Users { get; set; }
 
     }
 }

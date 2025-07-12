@@ -3,6 +3,7 @@ using MagicVilla_VillaAPI.Data;
 using MagicVilla_VillaAPI.Models;
 using MagicVilla_VillaAPI.Models.DTO;
 using MagicVilla_VillaAPI.Repository.IRepository;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
@@ -28,14 +29,32 @@ namespace MagicVilla_VillaAPI.Controllers
             _response = new();
         }
         [HttpGet]
+        [Authorize]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ResponseCache(CacheProfileName = "Duration30")]
 
-        public async Task<ActionResult<APIResponse>> GetVillas() 
+        public async Task<ActionResult<APIResponse>> GetVillas([FromQuery(Name ="occupancyfilter")]int? occupancy,
+            [FromQuery] string? search) 
         {
             try
             {
+                IEnumerable<Villa> villa;
                 _logger.LogInformation("Get all villas");
-                var villa = await _villaDb.GetAllAsync();
+                if (occupancy > 0)
+                {
+                     villa = await _villaDb.GetAllAsync(x => x.Occupancy == occupancy);
+
+                }
+                else
+                {
+                     villa = await _villaDb.GetAllAsync();
+                }
+                if (!string.IsNullOrEmpty(search))
+                {
+                    villa=villa.Where(x=>x.Name.ToLower().Contains(search));
+                }
                 _response.Result = _mapperConfig.Map<List<VillaDTO>>(villa);
                 _response.IsSuccess = true;
                 _response.StatusCode = HttpStatusCode.OK;
@@ -52,6 +71,10 @@ namespace MagicVilla_VillaAPI.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [Authorize]
+        [ResponseCache(Duration =30)]
         public async Task<ActionResult<APIResponse>> GetVilla(int id)
         {
             try
@@ -87,6 +110,10 @@ namespace MagicVilla_VillaAPI.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [Authorize(Roles ="admin")]
+
         public async Task<ActionResult<APIResponse>> CreateVilla([FromBody]VillaDTOCreate createdVilla)
         {
             try
@@ -126,6 +153,10 @@ namespace MagicVilla_VillaAPI.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [Authorize(Roles = "none")]
+
         public async Task<ActionResult<APIResponse>> DeleteVilla(int id)
         {
             try
@@ -160,6 +191,10 @@ namespace MagicVilla_VillaAPI.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [Authorize(Roles = "admin")]
+
         public async Task<ActionResult<APIResponse>> UpdateVilla(int id, [FromBody] VillaDTOUpdate updatedVilla) 
         {
             try
@@ -196,6 +231,10 @@ namespace MagicVilla_VillaAPI.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [Authorize(Roles = "admin")]
+
         public async  Task<ActionResult<APIResponse>> UpdateVilla(int id, JsonPatchDocument<VillaDTOUpdate>patchVilla)
         {
             try
